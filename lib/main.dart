@@ -4,6 +4,7 @@ import 'package:device_apps/device_apps.dart';
 import 'package:search_page/search_page.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:http/http.dart' as http;
+import 'package:android_intent/android_intent.dart';
 
 void main() {
   runApp(MyApp());
@@ -132,6 +133,20 @@ class _MyHomePageState extends State<MyHomePage> {
                     onPressed: () {
                       _reloadTodo();
                     },
+                  ),
+                  IconButton(
+                    color: Colors.white,
+                    icon: Icon(Icons.file_copy),
+                    onPressed: () {
+                      DeviceApps.openApp("pl.solidexplorer2");
+                    },
+                  ),
+                  IconButton(
+                    color: Colors.white,
+                    icon: Icon(Icons.image),
+                    onPressed: () {
+                      DeviceApps.openApp("com.simplemobiletools.gallery.pro");
+                    },
                   )
                 ],
               ),
@@ -168,6 +183,14 @@ class _MyHomePageState extends State<MyHomePage> {
                 title: Text(app.appName),
                 onTap: () {
                   DeviceApps.openApp(app.packageName);
+                },
+                onLongPress: (){
+                  AndroidIntent intent = AndroidIntent(
+                    action: "android.settings.APPLICATION_DETAILS_SETTINGS",
+                    package: app.packageName,
+                    data: "package:"+app.packageName,
+                  );
+                  intent.launch();
                 },
               );
             },
