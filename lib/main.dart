@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:launcher_assist/launcher_assist.dart';
 import 'package:device_apps/device_apps.dart';
 import 'package:search_page/search_page.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:http/http.dart' as http;
 import 'package:android_intent/android_intent.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 void main() {
   runApp(MyApp());
@@ -40,6 +42,21 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   initState() {
     super.initState();
+    Permission.storage.isRestricted.then((result) {
+      if (!result) {
+        Permission.storage.request().then((permissionStatus) {
+          if (permissionStatus.isRestricted) {
+            SystemNavigator.pop();
+          }
+          // Get wallpaper as binary data
+          LauncherAssist.getWallpaper().then((imageData) {
+            setState(() {
+              wallpaper = imageData;
+            });
+          });
+        });
+      }
+    });
     DeviceApps.getInstalledApplications(
             includeAppIcons: true,
             onlyAppsWithLaunchIntent: true,
@@ -50,12 +67,6 @@ class _MyHomePageState extends State<MyHomePage> {
       });
     });
     _reloadTodo();
-    // Get wallpaper as binary data
-    LauncherAssist.getWallpaper().then((imageData) {
-      setState(() {
-        wallpaper = imageData;
-      });
-    });
   }
 
   _reloadTodo() {
@@ -71,133 +82,148 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        padding: EdgeInsets.only(top: 50.0),
-        decoration: BoxDecoration(
-          image: DecorationImage(
-              image: MemoryImage(wallpaper),
-              fit: BoxFit.cover), //todo: include an asset image
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: <Widget>[
-            Container(
-              child: Row(
-                children: <Widget>[
-                  IconButton(
-                    color: Colors.white,
-                    icon: Icon(Icons.dialpad),
-                    onPressed: () {
-                      DeviceApps.openApp("com.android.dialer");
-                    },
-                  ),
-                  IconButton(
-                    color: Colors.white,
-                    icon: Icon(Icons.web),
-                    onPressed: () {
-                      DeviceApps.openApp("org.mozilla.fenix");
-                    },
-                  ),
-                  IconButton(
-                    color: Colors.white,
-                    icon: Icon(Icons.camera_alt),
-                    onPressed: () {
-                      DeviceApps.openApp("com.oneplus.camera");
-                    },
-                  ),
-                  IconButton(
-                    color: Colors.white,
-                    icon: Icon(Icons.music_note),
-                    onPressed: () {
-                      DeviceApps.openApp("com.spotify.music");
-                    },
-                  ),
-                  IconButton(
-                    color: Colors.white,
-                    icon: Icon(Icons.attach_money),
-                    onPressed: () {
-                      DeviceApps.openApp("com.snapwork.hdfcsec");
-                    },
-                  ),
-                  IconButton(
-                    color: Colors.white,
-                    icon: Icon(Icons.settings),
-                    onPressed: () {
-                      DeviceApps.openApp("com.android.settings");
-                    },
-                  ),
-                  IconButton(
-                    color: Colors.white,
-                    icon: Icon(Icons.refresh),
-                    onPressed: () {
-                      _reloadTodo();
-                    },
-                  ),
-                  IconButton(
-                    color: Colors.white,
-                    icon: Icon(Icons.file_copy),
-                    onPressed: () {
-                      DeviceApps.openApp("pl.solidexplorer2");
-                    },
-                  ),
-                  IconButton(
-                    color: Colors.white,
-                    icon: Icon(Icons.image),
-                    onPressed: () {
-                      DeviceApps.openApp("com.simplemobiletools.gallery.pro");
-                    },
-                  )
-                ],
+    return WillPopScope(
+      onWillPop: () async => false,
+      child: Scaffold(
+        body: Container(
+          padding: EdgeInsets.only(top: 50.0),
+          decoration: BoxDecoration(
+            image: DecorationImage(
+                image: MemoryImage(wallpaper),
+                fit: BoxFit.cover), //todo: include an asset image
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: <Widget>[
+              Container(
+                child: Row(
+                  children: <Widget>[
+                    IconButton(
+                      color: Colors.white,
+                      icon: Icon(Icons.dialpad),
+                      onPressed: () {
+                        DeviceApps.openApp("com.android.dialer");
+                      },
+                    ),
+                    IconButton(
+                      color: Colors.white,
+                      icon: Icon(Icons.web),
+                      onPressed: () {
+                        DeviceApps.openApp("org.mozilla.fenix");
+                      },
+                    ),
+                    IconButton(
+                      color: Colors.white,
+                      icon: Icon(Icons.camera_alt),
+                      onPressed: () {
+                        DeviceApps.openApp("com.oneplus.camera");
+                      },
+                    ),
+                    IconButton(
+                      color: Colors.white,
+                      icon: Icon(Icons.music_note),
+                      onPressed: () {
+                        DeviceApps.openApp("com.spotify.music");
+                      },
+                    ),
+                    IconButton(
+                      color: Colors.white,
+                      icon: Icon(Icons.attach_money),
+                      onPressed: () {
+                        DeviceApps.openApp("com.snapwork.hdfcsec");
+                      },
+                    ),
+                    IconButton(
+                      color: Colors.white,
+                      icon: Icon(Icons.settings),
+                      onPressed: () {
+                        DeviceApps.openApp("com.android.settings");
+                      },
+                    ),
+                    IconButton(
+                      color: Colors.white,
+                      icon: Icon(Icons.refresh),
+                      onPressed: () {
+                        _reloadTodo();
+                      },
+                    ),
+                    IconButton(
+                      color: Colors.white,
+                      icon: Icon(Icons.file_copy),
+                      onPressed: () {
+                        DeviceApps.openApp("pl.solidexplorer2");
+                      },
+                    ),
+                    IconButton(
+                      color: Colors.white,
+                      icon: Icon(Icons.image),
+                      onPressed: () {
+                        DeviceApps.openApp("com.simplemobiletools.gallery.pro");
+                      },
+                    )
+                  ],
+                ),
               ),
-            ),
-            Container(
-              child: Markdown(
-                shrinkWrap: true,
-                data: todoData,
+              Expanded(
+                child: PageView(
+                  children: [
+                    Container(
+                      color: Colors.black54,
+                      child: Markdown(
+                        shrinkWrap: true,
+                        data: todoData,
+                      ),
+                    ),
+                    Container()
+                  ],
+                ),
               ),
-            )
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.grey[800],
-        tooltip: 'Search apps',
-        onPressed: () => showSearch(
-          context: context,
-          delegate: SearchPage<Application>(
-            showItemsOnEmpty: true,
-            items: apps,
-            searchLabel: 'Search app',
-            suggestion: Center(
-              child: Text('Filter apps'),
-            ),
-            failure: Center(
-              child: Text('No app found :('),
-            ),
-            filter: (app) => [app.appName],
-            builder: (app) {
-              ApplicationWithIcon appWithIcon = app as ApplicationWithIcon;
-              return ListTile(
-                leading: Image.memory(appWithIcon.icon, width: 24.0),
-                title: Text(app.appName),
-                onTap: () {
-                  DeviceApps.openApp(app.packageName);
-                },
-                onLongPress: (){
-                  AndroidIntent intent = AndroidIntent(
-                    action: "android.settings.APPLICATION_DETAILS_SETTINGS",
-                    package: app.packageName,
-                    data: "package:"+app.packageName,
-                  );
-                  intent.launch();
-                },
-              );
-            },
+            ],
           ),
         ),
-        child: Icon(Icons.search),
+        floatingActionButton: FloatingActionButton(
+          backgroundColor: Colors.white70,
+          tooltip: 'Search apps',
+          onPressed: () => showSearch(
+            context: context,
+            delegate: SearchPage<Application>(
+              showItemsOnEmpty: true,
+              items: apps,
+              searchLabel: 'Search app',
+              suggestion: Center(
+                child: Text('Filter apps'),
+              ),
+              failure: Center(
+                child: Text('No app found :('),
+              ),
+              filter: (app) => [app.appName],
+              builder: (app) {
+                ApplicationWithIcon appWithIcon = app as ApplicationWithIcon;
+                return ListTile(
+                  leading: Image.memory(appWithIcon.icon, width: 24.0),
+                  title: Text(app.appName),
+                  onTap: () {
+                    DeviceApps.openApp(app.packageName);
+                  },
+                  onLongPress: () {
+                    AndroidIntent intent = AndroidIntent(
+                      action: "android.settings.APPLICATION_DETAILS_SETTINGS",
+                      package: app.packageName,
+                      data: "package:" + app.packageName,
+                    );
+                    intent.launch();
+                  },
+                );
+              },
+            ),
+          ),
+          child: Icon(Icons.search),
+        ),
       ),
     );
   }
 }
+
+//todo add eventlistener for fingeprint key
+//todo better handling for the list of applications installed
+//todo disable back button

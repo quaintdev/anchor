@@ -21,6 +21,7 @@ environment:
   sdk: ">=2.7.0 <3.0.0"
 
 dependencies:
+  permission_handler: ^5.0.1+1
   http: ^0.12.2
   android_intent: ^0.3.7+7
   device_apps: ^1.2.0
