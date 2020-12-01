@@ -38,6 +38,7 @@ class _MyHomePageState extends State<MyHomePage> {
   var wallpaper;
   List<Application> apps = List();
   String todoData = "";
+  PermissionStatus storagePermissionStatus;
 
   @override
   initState() {
@@ -45,39 +46,40 @@ class _MyHomePageState extends State<MyHomePage> {
     Permission.storage.isRestricted.then((result) {
       if (!result) {
         Permission.storage.request().then((permissionStatus) {
-          if (permissionStatus.isRestricted) {
+          if (permissionStatus.isGranted) {
+            storagePermissionStatus = permissionStatus;
+          } else {
             SystemNavigator.pop();
           }
-          // Get wallpaper as binary data
-          LauncherAssist.getWallpaper().then((imageData) {
-            setState(() {
-              wallpaper = imageData;
-            });
-          });
         });
       }
     });
-    DeviceApps.getInstalledApplications(
-            includeAppIcons: true,
-            onlyAppsWithLaunchIntent: true,
-            includeSystemApps: true)
-        .then((applications) {
+    Future.wait([_loadWallpaper(), _loadApps(), _loadTodo()])
+        .then((List response) {
       setState(() {
-        apps = applications;
+        todoData = response[2];
       });
     });
-    _reloadTodo();
   }
 
-  _reloadTodo() {
-    http.get("http://192.168.0.25:8008/todo.md").then((response) {
-      print(response.statusCode);
-      if (response.statusCode == 200) {
-        setState(() {
-          todoData = response.body.toString();
-        });
-      }
-    });
+  Future _loadWallpaper() async {
+    if (storagePermissionStatus.isGranted)
+      wallpaper = await LauncherAssist.getWallpaper();
+  }
+
+  Future _loadApps() async {
+    apps = await DeviceApps.getInstalledApplications(
+        includeAppIcons: true,
+        onlyAppsWithLaunchIntent: true,
+        includeSystemApps: true);
+  }
+
+  Future<String> _loadTodo() async {
+    var response = await http.get("http://192.168.0.25:8008/todo.md");
+    if (response.statusCode == 200) {
+      return response.body.toString();
+    }
+    return "";
   }
 
   @override
@@ -87,11 +89,12 @@ class _MyHomePageState extends State<MyHomePage> {
       child: Scaffold(
         body: Container(
           padding: EdgeInsets.only(top: 50.0),
-          decoration: BoxDecoration(
-            image: DecorationImage(
-                image: MemoryImage(wallpaper),
-                fit: BoxFit.cover), //todo: include an asset image
-          ),
+          decoration: wallpaper != null
+              ? BoxDecoration(
+                  image: DecorationImage(
+                      image: MemoryImage(wallpaper), fit: BoxFit.cover),
+                )
+              : BoxDecoration(),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: <Widget>[
@@ -142,13 +145,6 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                     IconButton(
                       color: Colors.white,
-                      icon: Icon(Icons.refresh),
-                      onPressed: () {
-                        _reloadTodo();
-                      },
-                    ),
-                    IconButton(
-                      color: Colors.white,
                       icon: Icon(Icons.file_copy),
                       onPressed: () {
                         DeviceApps.openApp("pl.solidexplorer2");
@@ -160,7 +156,17 @@ class _MyHomePageState extends State<MyHomePage> {
                       onPressed: () {
                         DeviceApps.openApp("com.simplemobiletools.gallery.pro");
                       },
-                    )
+                    ),
+                    IconButton(
+                      color: Colors.white,
+                      icon: Icon(Icons.refresh),
+                      onPressed: () {
+                        Future.wait([_loadWallpaper(), _loadApps()])
+                            .then((List response) {
+                          setState(() {});
+                        });
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -169,9 +175,26 @@ class _MyHomePageState extends State<MyHomePage> {
                   children: [
                     Container(
                       color: Colors.black54,
-                      child: Markdown(
-                        shrinkWrap: true,
-                        data: todoData,
+                      child: Stack(
+                        children: [
+                          Markdown(
+                            shrinkWrap: true,
+                            data: todoData,
+                          ),
+                          Align(
+                            alignment: Alignment.topRight,
+                            child: IconButton(
+                              icon: Icon(Icons.refresh),
+                              onPressed: () {
+                                _loadTodo().then((response) {
+                                  setState(() {
+                                    todoData = response;
+                                  });
+                                });
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     Container()
