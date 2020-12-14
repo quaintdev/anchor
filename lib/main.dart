@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:launcher_assist/launcher_assist.dart';
@@ -37,7 +40,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   var wallpaper;
   List<Application> apps = List();
-  String todoData = "";
+  String todoData = "", _quote = "";
   PermissionStatus storagePermissionStatus;
 
   @override
@@ -54,6 +57,7 @@ class _MyHomePageState extends State<MyHomePage> {
         });
       }
     });
+    _loadQuote();
     Future.wait([_loadWallpaper(), _loadApps(), _loadTodo()])
         .then((List response) {
       setState(() {
@@ -72,6 +76,7 @@ class _MyHomePageState extends State<MyHomePage> {
         includeAppIcons: true,
         onlyAppsWithLaunchIntent: true,
         includeSystemApps: true);
+    apps.sort((a, b) => a.appName.compareTo(b.appName));
   }
 
   Future<String> _loadTodo() async {
@@ -79,6 +84,17 @@ class _MyHomePageState extends State<MyHomePage> {
     if (response.statusCode == 200) {
       return response.body.toString();
     }
+    return "";
+  }
+
+  _loadQuote() async {
+    Socket socket = await Socket.connect('192.168.0.25', 1717);
+    socket.listen((List<int> event) {
+      setState(() {
+        _quote = utf8.decode(event).trim();
+      });
+    });
+    socket.close();
     return "";
   }
 
@@ -95,109 +111,121 @@ class _MyHomePageState extends State<MyHomePage> {
                       image: MemoryImage(wallpaper), fit: BoxFit.cover),
                 )
               : BoxDecoration(),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: <Widget>[
-              Container(
-                child: Row(
-                  children: <Widget>[
-                    IconButton(
-                      color: Colors.white,
-                      icon: Icon(Icons.dialpad),
-                      onPressed: () {
-                        DeviceApps.openApp("com.android.dialer");
-                      },
-                    ),
-                    IconButton(
-                      color: Colors.white,
-                      icon: Icon(Icons.web),
-                      onPressed: () {
-                        DeviceApps.openApp("org.mozilla.fenix");
-                      },
-                    ),
-                    IconButton(
-                      color: Colors.white,
-                      icon: Icon(Icons.camera_alt),
-                      onPressed: () {
-                        DeviceApps.openApp("com.oneplus.camera");
-                      },
-                    ),
-                    IconButton(
-                      color: Colors.white,
-                      icon: Icon(Icons.music_note),
-                      onPressed: () {
-                        DeviceApps.openApp("com.spotify.music");
-                      },
-                    ),
-                    IconButton(
-                      color: Colors.white,
-                      icon: Icon(Icons.attach_money),
-                      onPressed: () {
-                        DeviceApps.openApp("com.snapwork.hdfcsec");
-                      },
-                    ),
-                    IconButton(
-                      color: Colors.white,
-                      icon: Icon(Icons.settings),
-                      onPressed: () {
-                        DeviceApps.openApp("com.android.settings");
-                      },
-                    ),
-                    IconButton(
-                      color: Colors.white,
-                      icon: Icon(Icons.file_copy),
-                      onPressed: () {
-                        DeviceApps.openApp("pl.solidexplorer2");
-                      },
-                    ),
-                    IconButton(
-                      color: Colors.white,
-                      icon: Icon(Icons.image),
-                      onPressed: () {
-                        DeviceApps.openApp("com.simplemobiletools.gallery.pro");
-                      },
-                    ),
-                    IconButton(
-                      color: Colors.white,
-                      icon: Icon(Icons.refresh),
-                      onPressed: () {
-                        Future.wait([_loadWallpaper(), _loadApps()])
-                            .then((List response) {
-                          setState(() {});
+          child: PageView(
+            children: [
+              Row(
+                children: [
+                  Column(
+                    children: [
+                      IconButton(
+                        color: Colors.white,
+                        icon: Icon(Icons.refresh),
+                        onPressed: () {
+                          Future.wait([_loadWallpaper(), _loadApps()])
+                              .then((List response) {
+                            setState(() {});
+                          });
+                        },
+                      ),
+                      IconButton(
+                        color: Colors.white,
+                        icon: Icon(Icons.camera_alt),
+                        onPressed: () {
+                          DeviceApps.openApp("com.oneplus.camera");
+                        },
+                      ),
+                      IconButton(
+                        color: Colors.white,
+                        icon: Icon(Icons.settings),
+                        onPressed: () {
+                          DeviceApps.openApp("com.android.settings");
+                        },
+                      ),
+                      IconButton(
+                        color: Colors.white,
+                        icon: Icon(Icons.file_copy),
+                        onPressed: () {
+                          DeviceApps.openApp("pl.solidexplorer2");
+                        },
+                      ),
+                      IconButton(
+                        color: Colors.white,
+                        icon: Icon(Icons.image),
+                        onPressed: () {
+                          DeviceApps.openApp(
+                              "com.simplemobiletools.gallery.pro");
+                        },
+                      ),
+                      IconButton(
+                        color: Colors.white,
+                        icon: Icon(Icons.attach_money),
+                        onPressed: () {
+                          DeviceApps.openApp("com.snapwork.hdfcsec");
+                        },
+                      ),
+                      IconButton(
+                        color: Colors.white,
+                        icon: Icon(Icons.music_note),
+                        onPressed: () {
+                          DeviceApps.openApp("com.spotify.music");
+                        },
+                      ),
+                      IconButton(
+                        color: Colors.white,
+                        icon: Icon(Icons.web),
+                        onPressed: () {
+                          DeviceApps.openApp("org.mozilla.fenix");
+                        },
+                      ),
+                      IconButton(
+                        color: Colors.white,
+                        icon: Icon(Icons.dialpad),
+                        onPressed: () {
+                          DeviceApps.openApp("com.android.dialer");
+                        },
+                      ),
+                    ],
+                  ),
+                  Expanded(
+                      child: Container(
+                    alignment: Alignment.topLeft,
+                    child: InkWell(
+                      child: Text(
+                        _quote,
+                        softWrap: true,
+                      ),
+                      onTap: () {
+                        _loadQuote().then((result) {
+                          setState(() {
+                            _quote = result;
+                          });
                         });
                       },
                     ),
-                  ],
-                ),
+                  ))
+                ],
               ),
-              Expanded(
-                child: PageView(
+              Container(
+                color: Colors.black54,
+                child: Stack(
                   children: [
-                    Container(
-                      color: Colors.black54,
-                      child: Stack(
-                        children: [
-                          Markdown(
-                            shrinkWrap: true,
-                            data: todoData,
-                          ),
-                          Align(
-                            alignment: Alignment.topRight,
-                            child: IconButton(
-                              icon: Icon(Icons.refresh),
-                              onPressed: () {
-                                _loadTodo().then((response) {
-                                  setState(() {
-                                    todoData = response;
-                                  });
-                                });
-                              },
-                            ),
-                          ),
-                        ],
+                    Markdown(
+                      shrinkWrap: true,
+                      data: todoData,
+                    ),
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: IconButton(
+                        icon: Icon(Icons.refresh),
+                        onPressed: () {
+                          _loadTodo().then((response) {
+                            setState(() {
+                              todoData = response;
+                            });
+                          });
+                        },
                       ),
                     ),
-                    Container()
                   ],
                 ),
               ),
@@ -217,7 +245,16 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: Text('Filter apps'),
               ),
               failure: Center(
-                child: Text('No app found :('),
+                child: FlatButton(
+                  onPressed: () {
+                    AndroidIntent intent = AndroidIntent(
+                      action: "action_view",
+                      data: "market://search?q=",
+                    );
+                    intent.launch();
+                  },
+                  child: Text("Open play store"),
+                ),
               ),
               filter: (app) => [app.appName],
               builder: (app) {
@@ -227,6 +264,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   title: Text(app.appName),
                   onTap: () {
                     DeviceApps.openApp(app.packageName);
+                    Navigator.of(context).maybePop();
                   },
                   onLongPress: () {
                     AndroidIntent intent = AndroidIntent(
