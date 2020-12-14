@@ -87,6 +87,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return "";
   }
 
+  //fetch qotd from server
   _loadQuote() async {
     Socket socket = await Socket.connect('192.168.0.25', 1717);
     socket.listen((List<int> event) {
@@ -96,6 +97,53 @@ class _MyHomePageState extends State<MyHomePage> {
     });
     socket.close();
     return "";
+  }
+
+  SearchPage<Application> _searchDelegate;
+  SearchPage<Application> _prepareSearchDelegate() {
+    _searchDelegate = SearchPage<Application>(
+      showItemsOnEmpty: true,
+      items: apps,
+      searchLabel: 'Search app',
+      suggestion: Center(
+        child: Text('Filter apps'),
+      ),
+      failure: Center(
+        child: FlatButton(
+          onPressed: () {
+            AndroidIntent _playStoreIntent = AndroidIntent(
+              action: "action_view",
+              data: "market://search?q=" + _searchDelegate.query,
+            );
+            _playStoreIntent.launch();
+            Navigator.of(context).maybePop();
+          },
+          color: Colors.blue,
+          child: Text("Open in play store"),
+        ),
+      ),
+      filter: (app) => [app.appName],
+      builder: (app) {
+        ApplicationWithIcon appWithIcon = app as ApplicationWithIcon;
+        return ListTile(
+          leading: Image.memory(appWithIcon.icon, width: 24.0),
+          title: Text(app.appName),
+          onTap: () {
+            DeviceApps.openApp(app.packageName);
+            Navigator.of(context).maybePop();
+          },
+          onLongPress: () {
+            AndroidIntent intent = AndroidIntent(
+              action: "android.settings.APPLICATION_DETAILS_SETTINGS",
+              package: app.packageName,
+              data: "package:" + app.packageName,
+            );
+            intent.launch();
+          },
+        );
+      },
+    );
+    return _searchDelegate;
   }
 
   @override
@@ -113,9 +161,28 @@ class _MyHomePageState extends State<MyHomePage> {
               : BoxDecoration(),
           child: PageView(
             children: [
-              Row(
+              Stack(
                 children: [
+                  Expanded(
+                    child: Container(
+                      alignment: Alignment.topCenter,
+                      child: InkWell(
+                        child: Text(
+                          _quote,
+                          textAlign: TextAlign.center,
+                        ),
+                        onTap: () {
+                          _loadQuote().then((result) {
+                            setState(() {
+                              _quote = result;
+                            });
+                          });
+                        },
+                      ),
+                    ),
+                  ),
                   Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       IconButton(
                         color: Colors.white,
@@ -186,23 +253,6 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                     ],
                   ),
-                  Expanded(
-                      child: Container(
-                    alignment: Alignment.topLeft,
-                    child: InkWell(
-                      child: Text(
-                        _quote,
-                        softWrap: true,
-                      ),
-                      onTap: () {
-                        _loadQuote().then((result) {
-                          setState(() {
-                            _quote = result;
-                          });
-                        });
-                      },
-                    ),
-                  ))
                 ],
               ),
               Container(
@@ -237,46 +287,7 @@ class _MyHomePageState extends State<MyHomePage> {
           tooltip: 'Search apps',
           onPressed: () => showSearch(
             context: context,
-            delegate: SearchPage<Application>(
-              showItemsOnEmpty: true,
-              items: apps,
-              searchLabel: 'Search app',
-              suggestion: Center(
-                child: Text('Filter apps'),
-              ),
-              failure: Center(
-                child: FlatButton(
-                  onPressed: () {
-                    AndroidIntent intent = AndroidIntent(
-                      action: "action_view",
-                      data: "market://search?q=",
-                    );
-                    intent.launch();
-                  },
-                  child: Text("Open play store"),
-                ),
-              ),
-              filter: (app) => [app.appName],
-              builder: (app) {
-                ApplicationWithIcon appWithIcon = app as ApplicationWithIcon;
-                return ListTile(
-                  leading: Image.memory(appWithIcon.icon, width: 24.0),
-                  title: Text(app.appName),
-                  onTap: () {
-                    DeviceApps.openApp(app.packageName);
-                    Navigator.of(context).maybePop();
-                  },
-                  onLongPress: () {
-                    AndroidIntent intent = AndroidIntent(
-                      action: "android.settings.APPLICATION_DETAILS_SETTINGS",
-                      package: app.packageName,
-                      data: "package:" + app.packageName,
-                    );
-                    intent.launch();
-                  },
-                );
-              },
-            ),
+            delegate: _prepareSearchDelegate(),
           ),
           child: Icon(Icons.search),
         ),
@@ -286,5 +297,3 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 //todo add eventlistener for fingeprint key
-//todo better handling for the list of applications installed
-//todo disable back button
