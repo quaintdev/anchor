@@ -39,7 +39,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   var wallpaper;
-  List<Application> apps = List();
+  List<ApplicationWithIcon> apps = List();
   String todoData = "", _quote = "";
   PermissionStatus storagePermissionStatus;
 
@@ -72,10 +72,15 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future _loadApps() async {
-    apps = await DeviceApps.getInstalledApplications(
+    List<Application> appList = await DeviceApps.getInstalledApplications(
         includeAppIcons: true,
         onlyAppsWithLaunchIntent: true,
         includeSystemApps: true);
+    if (apps.length == 0) {
+      appList.forEach((element) {
+        apps.add(element as ApplicationWithIcon);
+      });
+    }
     apps.sort((a, b) => a.appName.compareTo(b.appName));
   }
 
@@ -99,9 +104,9 @@ class _MyHomePageState extends State<MyHomePage> {
     return "";
   }
 
-  SearchPage<Application> _searchDelegate;
-  SearchPage<Application> _prepareSearchDelegate() {
-    _searchDelegate = SearchPage<Application>(
+  SearchPage<ApplicationWithIcon> _searchDelegate;
+  SearchPage<ApplicationWithIcon> _prepareSearchDelegate() {
+    _searchDelegate = SearchPage<ApplicationWithIcon>(
       showItemsOnEmpty: true,
       items: apps,
       searchLabel: 'Search app',
@@ -124,9 +129,8 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       filter: (app) => [app.appName],
       builder: (app) {
-        ApplicationWithIcon appWithIcon = app as ApplicationWithIcon;
         return ListTile(
-          leading: Image.memory(appWithIcon.icon, width: 24.0),
+          leading: Image.memory(app.icon, width: 24.0),
           title: Text(app.appName),
           onTap: () {
             DeviceApps.openApp(app.packageName);
@@ -163,22 +167,21 @@ class _MyHomePageState extends State<MyHomePage> {
             children: [
               Stack(
                 children: [
-                  Expanded(
-                    child: Container(
-                      alignment: Alignment.topCenter,
-                      child: InkWell(
-                        child: Text(
-                          _quote,
-                          textAlign: TextAlign.center,
-                        ),
-                        onTap: () {
-                          _loadQuote().then((result) {
-                            setState(() {
-                              _quote = result;
-                            });
-                          });
-                        },
+                  Container(
+                    padding: EdgeInsets.all(16.0),
+                    alignment: Alignment.topCenter,
+                    child: InkWell(
+                      child: Text(
+                        _quote,
+                        style: TextStyle(color: Colors.white54),
                       ),
+                      onTap: () {
+                        _loadQuote().then((result) {
+                          setState(() {
+                            _quote = result;
+                          });
+                        });
+                      },
                     ),
                   ),
                   Column(
@@ -255,35 +258,35 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ],
               ),
-              Container(
-                color: Colors.black54,
-                child: Stack(
-                  children: [
-                    Markdown(
+              Stack(
+                children: [
+                  Container(
+                    color: Colors.black54,
+                    child: Markdown(
                       shrinkWrap: true,
                       data: todoData,
                     ),
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: IconButton(
-                        icon: Icon(Icons.refresh),
-                        onPressed: () {
-                          _loadTodo().then((response) {
-                            setState(() {
-                              todoData = response;
-                            });
+                  ),
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: IconButton(
+                      icon: Icon(Icons.refresh),
+                      onPressed: () {
+                        _loadTodo().then((response) {
+                          setState(() {
+                            todoData = response;
                           });
-                        },
-                      ),
+                        });
+                      },
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),
         ),
         floatingActionButton: FloatingActionButton(
-          backgroundColor: Colors.white70,
+          backgroundColor: Colors.white24,
           tooltip: 'Search apps',
           onPressed: () => showSearch(
             context: context,
