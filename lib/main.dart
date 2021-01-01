@@ -46,17 +46,17 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   initState() {
     super.initState();
-    Permission.storage.isRestricted.then((result) {
-      if (!result) {
-        Permission.storage.request().then((permissionStatus) {
-          if (permissionStatus.isGranted) {
-            storagePermissionStatus = permissionStatus;
-          } else {
-            SystemNavigator.pop();
-          }
-        });
+    _init();
+  }
+
+  _init() async {
+    bool status = await Permission.storage.isRestricted;
+    if (!status) {
+      PermissionStatus permissionStatus = await Permission.storage.request();
+      if (!permissionStatus.isGranted) {
+        SystemNavigator.pop();
       }
-    });
+    }
     _loadQuote();
     Future.wait([_loadWallpaper(), _loadApps(), _loadTodo()])
         .then((List response) {
