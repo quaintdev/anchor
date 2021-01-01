@@ -192,16 +192,6 @@ class _MyHomePageState extends State<MyHomePage> {
                           children: [
                             IconButton(
                               color: Colors.white,
-                              icon: Icon(Icons.refresh),
-                              onPressed: () {
-                                Future.wait([_loadWallpaper(), _loadApps()])
-                                    .then((List response) {
-                                  setState(() {});
-                                });
-                              },
-                            ),
-                            IconButton(
-                              color: Colors.white,
                               icon: Icon(Icons.camera_alt),
                               onPressed: () {
                                 DeviceApps.openApp("com.oneplus.camera");
