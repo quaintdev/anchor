@@ -105,21 +105,19 @@ class _MyHomePageState extends State<MyHomePage> {
     return "";
   }
 
-  SearchPage<ApplicationWithIcon> _searchDelegate;
+  String searchQuery = "";
   SearchPage<ApplicationWithIcon> _prepareSearchDelegate() {
-    _searchDelegate = SearchPage<ApplicationWithIcon>(
+    return SearchPage<ApplicationWithIcon>(
       showItemsOnEmpty: true,
       items: apps,
+      onQueryUpdate: (query) => searchQuery = query,
       searchLabel: 'Search app',
-      suggestion: Center(
-        child: Text('Filter apps'),
-      ),
       failure: Center(
         child: FlatButton(
           onPressed: () {
             AndroidIntent _playStoreIntent = AndroidIntent(
               action: "action_view",
-              data: "market://search?q=" + _searchDelegate.query,
+              data: "market://search?q=" + searchQuery,
             );
             _playStoreIntent.launch();
             Navigator.of(context).maybePop();
@@ -148,7 +146,6 @@ class _MyHomePageState extends State<MyHomePage> {
         );
       },
     );
-    return _searchDelegate;
   }
 
   @override
@@ -291,5 +288,3 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
-
-//todo add eventlistener for fingeprint key

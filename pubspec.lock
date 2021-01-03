@@ -185,7 +185,7 @@ packages:
       name: search_page
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.3.0"
+    version: "1.4.0"
   sky_engine:
     dependency: transitive
     description: flutter
