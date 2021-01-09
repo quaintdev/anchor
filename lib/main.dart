@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -86,22 +87,41 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<String> _loadTodo() async {
-    var response = await http.get("http://192.168.0.25:8008/todo.md");
-    if (response.statusCode == 200) {
-      return response.body.toString();
+    try {
+      var response = await http
+          .get("http://192.168.0.25:8008/todo.md")
+          .timeout(Duration(seconds: 3), onTimeout: () {
+        throw TimeoutException("error fetching todo");
+      });
+      if (response.statusCode == 200) {
+        return response.body.toString();
+      }
+    } on TimeoutException catch (_) {
+      SnackBar(content: Text("error fetching todo"));
+    } on SocketException catch (_) {
+      SnackBar(content: Text("error fetching todo"));
     }
     return "";
   }
 
   //fetch qotd from server
   _loadQuote() async {
-    Socket socket = await Socket.connect('192.168.0.25', 1717);
-    socket.listen((List<int> event) {
-      setState(() {
-        _quote = utf8.decode(event).trim();
+    try {
+      Socket socket = await Socket.connect('192.168.0.25', 1717)
+          .timeout(Duration(seconds: 3), onTimeout: () {
+        throw TimeoutException("error fetching quote");
       });
-    });
-    socket.close();
+      socket.listen((List<int> event) {
+        setState(() {
+          _quote = utf8.decode(event).trim();
+        });
+      });
+      socket.close();
+    } on TimeoutException catch (_) {
+      SnackBar(content: Text("error fetching quote"));
+    } on SocketException catch (_) {
+      SnackBar(content: Text("error fetching quote"));
+    }
     return "";
   }
 
